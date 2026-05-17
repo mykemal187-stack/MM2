@@ -1,5 +1,5 @@
 -- ==========================================
---        PROJECT AEGIS - FIXED EDITION
+--        PROJECT AEGIS - ABSOLUTE FIXED
 -- ==========================================
 
 local Aegis = {
@@ -25,6 +25,9 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
+-- Karakter ve Bileşen Kontrolleri
+if not LocalPlayer then return end
+
 local function getGunOnGround()
     return Workspace:FindFirstChild("GunDrop") or Workspace:FindFirstChild("Gun")
 end
@@ -38,6 +41,7 @@ local function getMurderer()
     return nil
 end
 
+-- FONKSİYONLAR
 local function bombJump()
     Workspace.Gravity = 60
     task.wait(1.5)
@@ -64,6 +68,7 @@ local function getGunInstant()
     end
 end
 
+-- DÖNGÜLER VE EVENTLER
 task.spawn(function()
     while task.wait(0.5) do
         if Aegis.States.AutoGetGun then
@@ -89,7 +94,9 @@ RunService.RenderStepped:Connect(function()
     if murderer and murderer.Character and murderer.Character:FindFirstChild("HumanoidRootPart") then
         if Aegis.States.AimLock or Aegis.States.KillFocus then
             local cam = Workspace.CurrentCamera
-            cam.CFrame = CFrame.new(cam.CFrame.Position, murderer.Character.HumanoidRootPart.Position)
+            if cam then
+                cam.CFrame = CFrame.new(cam.CFrame.Position, murderer.Character.HumanoidRootPart.Position)
+            end
         end
     end
 end)
@@ -106,7 +113,7 @@ local function applyESP()
                     highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
                     
                     task.spawn(function()
-                        while Aegis.States.ESP and player.Character do
+                        while Aegis.States.ESP and player.Character and player.Character.Parent do
                             if player.Character:FindFirstChild("Knife") or (player.Backpack and player.Backpack:FindFirstChild("Knife")) then
                                 highlight.FillColor = Color3.fromRGB(255, 0, 0)
                             end
@@ -130,33 +137,30 @@ RunService.Heartbeat:Connect(function()
 end)
 
 local function setShiftlockStyle(styleType)
-    if styleType == "Neon" then
-        LocalPlayer.DevEnableMouseLock = true
-    elseif styleType == "Classic" then
-        LocalPlayer.DevEnableMouseLock = true
-    end
+    LocalPlayer.DevEnableMouseLock = true
 end
 
 -- ==========================================
---  YENİLENMİŞ ARAYÜZ (GUI) MOTORU
+--  GARANTİLİ VE SABİTLENMİŞ GUI MOTORU
 -- ==========================================
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "Aegis_V2_Fixed"
+ScreenGui.Name = "Aegis_V2_Final"
 ScreenGui.ResetOnSpawn = false
--- Güvenli yükleme için CoreGui kontrolü
-if syn and syn.protect_gui then
-    syn.protect_gui(ScreenGui)
-    ScreenGui.Parent = game:GetService("CoreGui")
-else
-    ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-end
 
+-- Executor tipine göre en güvenli yere enjekte etme
+local targetParent = LocalPlayer:FindFirstChild("PlayerGui")
+if game:GetService("CoreGui"):FindFirstChild("RobloxGui") then
+    targetParent = game:GetService("CoreGui")
+end
+ScreenGui.Parent = targetParent
+
+-- Ana Menü Çerçevesi (Genişletildi ve Sabitlendi)
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.Size = UDim2.new(0, 220, 0, 300)
-MainFrame.Position = UDim2.new(0.5, -110, 0.4, -150)
+MainFrame.Size = UDim2.new(0, 220, 0, 380) -- Tüm butonların sığacağı net yükseklik
+MainFrame.Position = UDim2.new(0.5, -110, 0.4, -190)
 MainFrame.BackgroundColor3 = Aegis.Theme.MainBG
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -165,6 +169,7 @@ MainFrame.Draggable = true
 local MainCorner = Instance.new("UICorner", MainFrame)
 MainCorner.CornerRadius = UDim.new(0, 8)
 
+-- Başlık Alanı
 local Header = Instance.new("TextLabel")
 Header.Name = "Header"
 Header.Parent = MainFrame
@@ -174,65 +179,56 @@ Header.BorderSizePixel = 0
 Header.Text = Aegis.Title
 Header.TextColor3 = Aegis.Theme.Accent
 Header.Font = Enum.Font.GothamBold
-Header.TextSize = 16
+Header.TextSize = 15
 
 local HeaderCorner = Instance.new("UICorner", Header)
 HeaderCorner.CornerRadius = UDim.new(0, 8)
 
--- Kaydırma Alanı Düzeltildi
-local ScrollPage = Instance.new("ScrollingFrame")
-ScrollPage.Name = "ScrollPage"
-ScrollPage.Parent = MainFrame
-ScrollPage.Size = UDim2.new(1, -10, 1, -50)
-ScrollPage.Position = UDim2.new(0, 5, 0, 45)
-ScrollPage.BackgroundTransparency = 1
-ScrollPage.BorderSizePixel = 0
-ScrollPage.ScrollBarThickness = 4
-ScrollPage.ScrollBarImageColor3 = Aegis.Theme.Accent
-
+-- Butonları Alt Alta Düzgünce Sıralayan Liste Sistemi
 local UIList = Instance.new("UIListLayout")
-UIList.Parent = ScrollPage
+UIList.Parent = MainFrame
 UIList.SortOrder = Enum.SortOrder.LayoutOrder
-UIList.Padding = UDim.new(0, 8)
+UIList.Padding = UDim.new(0, 5) -- Butonlar arası boşluk
 UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    ScrollPage.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 10)
-end)
+-- Başlığın listeden etkilenmemesi ve en üstte kalması için hizalama pedi
+local Padding = Instance.new("UIPadding")
+Padding.Parent = MainFrame
+Padding.PaddingTop = UDim.new(0, 45) 
 
--- Buton Oluşturucular Güncellendi (ZIndex ve Parent Sorunları Giderildi)
+-- KESİN ÇALIŞAN BUTON OLUŞTURUCULAR
 local function AddClickButton(text, order, callback)
     local Button = Instance.new("TextButton")
-    Button.Parent = ScrollPage
-    Button.Size = UDim2.new(0, 190, 0, 32)
+    Button.Parent = MainFrame
+    Button.Size = UDim2.new(0, 200, 0, 30) -- Sabit boyutlar
     Button.BackgroundColor3 = Aegis.Theme.ButtonBG
     Button.Text = text
     Button.TextColor3 = Aegis.Theme.Text
     Button.Font = Enum.Font.GothamSemibold
-    Button.TextSize = 13
+    Button.TextSize = 12
     Button.LayoutOrder = order
     Button.BorderSizePixel = 0
     
     local Corner = Instance.new("UICorner", Button)
-    Corner.CornerRadius = UDim.new(0, 5)
+    Corner.CornerRadius = UDim.new(0, 4)
     
     Button.MouseButton1Click:Connect(callback)
 end
 
 local function AddToggleButton(text, order, stateKey, callback)
     local Button = Instance.new("TextButton")
-    Button.Parent = ScrollPage
-    Button.Size = UDim2.new(0, 190, 0, 32)
+    Button.Parent = MainFrame
+    Button.Size = UDim2.new(0, 200, 0, 30) -- Sabit boyutlar
     Button.BackgroundColor3 = Aegis.Theme.ButtonBG
     Button.Text = text .. ": OFF"
     Button.TextColor3 = Aegis.Theme.Text
     Button.Font = Enum.Font.GothamSemibold
-    Button.TextSize = 13
+    Button.TextSize = 12
     Button.LayoutOrder = order
     Button.BorderSizePixel = 0
     
     local Corner = Instance.new("UICorner", Button)
-    Corner.CornerRadius = UDim.new(0, 5)
+    Corner.CornerRadius = UDim.new(0, 4)
     
     Button.MouseButton1Click:Connect(function()
         Aegis.States[stateKey] = not Aegis.States[stateKey]
@@ -247,7 +243,7 @@ local function AddToggleButton(text, order, stateKey, callback)
     end)
 end
 
--- Butonları Ekleme Sıralaması
+-- BUTONLARIN MENÜYE YÜKLENMESİ
 AddClickButton("💥 Bomb Jump", 1, bombJump)
 AddClickButton("🎯 Shoot Murderer", 2, autoShoot)
 AddClickButton("🔫 Grab Gun (Instant)", 3, getGunInstant)
@@ -257,5 +253,5 @@ AddToggleButton("🔒 Aim Lock", 6, "AimLock")
 AddToggleButton("😡 Focus Murderer", 7, "KillFocus")
 AddClickButton("⚡ [Shiftlock: Classic]", 8, function() setShiftlockStyle("Classic") end)
 AddClickButton("🔮 [Shiftlock: Cyber Neon]", 9, function() setShiftlockStyle("Neon") end)
- 
 
+print("Aegis V2 başarıyla yüklendi! Butonlar aktif.")
