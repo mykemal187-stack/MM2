@@ -1,4 +1,3 @@
-
 -- ==========================================
 --        PROJECT AEGIS - MM2 EDITION
 -- ==========================================
@@ -146,7 +145,6 @@ end)
 local function setShiftlockStyle(styleType)
     if styleType == "Neon" then
         LocalPlayer.DevEnableMouseLock = true
-        -- Custom visual adjustments can go here
     elseif styleType == "Classic" then
         LocalPlayer.DevEnableMouseLock = true
     end
@@ -157,9 +155,11 @@ end
 --  2. UI CORE ENGINE & SCROLLING FRAME
 -- ==========================================
 
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+-- DÜZELTME: Güvenli çalışması için PlayerGui klasörüne yönlendirildi.
+local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "Aegis_V2_EN"
 ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 190, 0, 260)
@@ -168,6 +168,7 @@ MainFrame.BackgroundColor3 = Aegis.Theme.MainBG
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
+MainFrame.ZIndex = 1
 
 local MainCorner = Instance.new("UICorner", MainFrame)
 MainCorner.CornerRadius = UDim.new(0, 10)
@@ -180,6 +181,7 @@ Header.Text = Aegis.Title
 Header.TextColor3 = Aegis.Theme.Accent
 Header.Font = Enum.Font.InterBold
 Header.TextSize = 16
+Header.ZIndex = 2
 
 local HeaderCorner = Instance.new("UICorner", Header)
 HeaderCorner.CornerRadius = UDim.new(0, 10)
@@ -190,13 +192,18 @@ ScrollPage.Size = UDim2.new(1, 0, 1, -45)
 ScrollPage.Position = UDim2.new(0, 0, 0, 45)
 ScrollPage.BackgroundTransparency = 1
 ScrollPage.BorderSizePixel = 0
-ScrollPage.CanvasSize = UDim2.new(0, 0, 0, 420)
-ScrollPage.ScrollBarThickness = 3
+ScrollPage.ScrollBarThickness = 4
+ScrollPage.ZIndex = 2
 
 local UIList = Instance.new("UIListLayout", ScrollPage)
 UIList.SortOrder = Enum.SortOrder.LayoutOrder
 UIList.Padding = UDim.new(0, 6)
 UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+-- DÜZELTME: Butonlar eklendikçe kaydırma alanının boyutunu otomatik hesaplar.
+UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ScrollPage.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 15)
+end)
 
 -- ==========================================
 --  3. COMPONENT CONSTRUCTORS
@@ -212,6 +219,7 @@ local function AddClickButton(text, order, callback)
     Button.Font = Enum.Font.SourceSansSemibold
     Button.TextSize = 14
     Button.LayoutOrder = order
+    Button.ZIndex = 3 -- DÜZELTME: Arka planın önünde kalması sağlandı.
     
     Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 6)
     Button.MouseButton1Click:Connect(callback)
@@ -227,6 +235,7 @@ local function AddToggleButton(text, order, stateKey, callback)
     Button.Font = Enum.Font.SourceSansSemibold
     Button.TextSize = 14
     Button.LayoutOrder = order
+    Button.ZIndex = 3 -- DÜZELTME: Arka planın önünde kalması sağlandı.
     
     Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 6)
     
@@ -261,3 +270,4 @@ AddToggleButton("😡 Focus Murderer", 7, "KillFocus")
 -- Advanced Shiftlock Modules
 AddClickButton("⚡ [Shiftlock: Classic]", 8, function() setShiftlockStyle("Classic") end)
 AddClickButton("🔮 [Shiftlock: Cyber Neon]", 9, function() setShiftlockStyle("Neon") end)
+
