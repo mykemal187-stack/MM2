@@ -1,6 +1,5 @@
 -- ================================================
--- DOUBLE JUMP - DÜZELTİLMİŞ
--- Sürüklenebilir buton + normal zıplama yüksekliği
+-- DOUBLE JUMP + ELÄ°MDEKÄ° EÅYAYI FIRLATMA
 -- StarterCharacterScripts > LocalScript
 -- ================================================
 
@@ -11,27 +10,26 @@ local RunService   = game:GetService("RunService")
 local player    = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local hrp       = character:WaitForChild("HumanoidRootPart")
+local humanoid  = character:WaitForChild("Humanoid")
 
--- ================================================
--- AYARLAR - buradan zıplama gücünü ayarla
--- ================================================
 local CONFIG = {
-    Jump1Force = 35,   -- 1. zıplama (düşür/artır)
-    Jump2Force = 30,   -- 2. zıplama (düşür/artır)
-    Jump2Delay = 0.3,  -- aralarındaki süre
-    Cooldown   = 1.5,
+    Jump1Force  = 40,   -- 1. zÄ±plama
+    Jump2Force  = 40,   -- 2. zÄ±plama
+    Jump2Delay  = 0.3,
+    Cooldown    = 1.5,
+    ThrowForce  = 60,
+    ThrowUp     = 10,
 }
 
 -- ================================================
 -- GUI
 -- ================================================
 local gui = Instance.new("ScreenGui")
-gui.Name           = "DoubleJumpGui"
+gui.Name           = "DJThrowGui"
 gui.ResetOnSpawn   = false
 gui.IgnoreGuiInset = true
 gui.Parent         = player.PlayerGui
 
--- Sürüklenebilir frame
 local frame = Instance.new("Frame")
 frame.Size                   = UDim2.new(0, 200, 0, 70)
 frame.Position               = UDim2.new(1, -220, 0, 20)
@@ -47,7 +45,7 @@ local title = Instance.new("TextLabel")
 title.Size                   = UDim2.new(1, -8, 0, 18)
 title.Position               = UDim2.new(0, 4, 0, 4)
 title.BackgroundTransparency = 1
-title.Text                   = "DOUBLE JUMP"
+title.Text                   = "DOUBLE JUMP + FIRLATMA"
 title.TextColor3             = Color3.fromRGB(0, 255, 200)
 title.TextSize               = 11
 title.Font                   = Enum.Font.GothamBold
@@ -58,9 +56,9 @@ btn.Size             = UDim2.new(1, -16, 1, -28)
 btn.Position         = UDim2.new(0, 8, 0, 22)
 btn.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
 btn.BorderSizePixel  = 0
-btn.Text             = "JUMP"
+btn.Text             = "JUMP + AT"
 btn.TextColor3       = Color3.fromRGB(0, 255, 200)
-btn.TextSize         = 20
+btn.TextSize         = 18
 btn.Font             = Enum.Font.GothamBold
 btn.AutoButtonColor  = false
 btn.ZIndex           = 2
@@ -81,7 +79,7 @@ cdLbl.Visible                = false
 cdLbl.Parent                 = btn
 
 -- ================================================
--- SÜRÜKLEME
+-- SÃœRÃœKLEME
 -- ================================================
 local dragging   = false
 local dragStart  = Vector2.new()
@@ -120,15 +118,38 @@ frame.InputEnded:Connect(function(i)
 end)
 
 -- ================================================
--- DOUBLE JUMP
+-- ELÄ°MDEKÄ° EÅYAYI FIRLATMA
+-- ================================================
+local function throwItem()
+    -- Elindeki aktif tool'u bul
+    local tool = character:FindFirstChildOfClass("Tool")
+    if not tool then return end -- elde eÅŸya yoksa hiÃ§bir ÅŸey yapma
+
+    -- Tool'u karakterden Ã§Ä±kar (dÃ¼ÅŸÃ¼r)
+    tool.Parent = workspace
+
+    -- Tool'un ana part'Ä±nÄ± bul
+    local handle = tool:FindFirstChild("Handle")
+    if not handle then return end
+
+    -- BaktÄ±ÄŸÄ±n yÃ¶ne + biraz yukarÄ± fÄ±rlat
+    local throwDir = (hrp.CFrame.LookVector + Vector3.new(0, CONFIG.ThrowUp / CONFIG.ThrowForce, 0)).Unit
+    handle.AssemblyLinearVelocity = throwDir * CONFIG.ThrowForce
+end
+
+-- ================================================
+-- DOUBLE JUMP + FIRLATMA
 -- ================================================
 local onCooldown = false
 
-local function doDoubleJump()
+local function doAction()
     if onCooldown or moved then return end
     onCooldown = true
 
-    -- 1. zıplama
+    -- EÅŸyayÄ± hemen fÄ±rlat
+    throwItem()
+
+    -- 1. zÄ±plama
     local bv1 = Instance.new("BodyVelocity")
     bv1.Velocity = Vector3.new(hrp.Velocity.X, CONFIG.Jump1Force, hrp.Velocity.Z)
     bv1.MaxForce = Vector3.new(0, 1e5, 0)
@@ -136,7 +157,7 @@ local function doDoubleJump()
     bv1.Parent   = hrp
     task.delay(0.08, function() if bv1 and bv1.Parent then bv1:Destroy() end end)
 
-    -- 2. zıplama
+    -- 2. zÄ±plama
     task.delay(CONFIG.Jump2Delay, function()
         if not hrp or not hrp.Parent then return end
         local bv2 = Instance.new("BodyVelocity")
@@ -172,16 +193,17 @@ local function doDoubleJump()
     end)
 end
 
-btn.MouseButton1Click:Connect(doDoubleJump)
+btn.MouseButton1Click:Connect(doAction)
 btn.InputBegan:Connect(function(i)
     if i.UserInputType == Enum.UserInputType.Touch then
-        doDoubleJump()
+        doAction()
     end
 end)
 
 player.CharacterAdded:Connect(function(c)
     character  = c
     hrp        = c:WaitForChild("HumanoidRootPart")
+    humanoid   = c:WaitForChild("Humanoid")
     onCooldown = false
     cdLbl.Visible        = false
     btn.TextTransparency = 0
